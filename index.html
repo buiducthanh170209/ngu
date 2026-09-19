@@ -1,669 +1,522 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <title>Phát hiện Buồn ngủ</title>
-  <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.14/dist/face-api.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vòng Quay May Mắn 1-42</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
     body {
-      background: #0b1120;
-      color: #e2e8f0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-      min-height: 100dvh;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: #fff;
       overflow-x: hidden;
+      padding: 20px;
+      position: relative;
     }
 
-    /* Header */
-    .header {
-      padding: 12px 16px 8px;
-      text-align: center;
-      background: linear-gradient(180deg, #1e293b 0%, transparent 100%);
-    }
-    .header h1 {
-      font-size: 1.35rem;
-      background: linear-gradient(90deg, #38bdf8, #818cf8);
+    h1 {
+      font-size: 2.2rem;
+      margin-bottom: 8px;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+      background: linear-gradient(90deg, #ffd700, #ffaa00);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      font-weight: 700;
+      background-clip: text;
     }
-    .header p { font-size: 0.8rem; color: #64748b; margin-top: 2px; }
 
-    /* Video area */
-    .video-wrap {
+    .subtitle {
+      color: #a0aec0;
+      margin-bottom: 24px;
+      font-size: 1rem;
+    }
+
+    .wheel-container {
       position: relative;
-      width: 100%;
-      max-width: 480px;
-      margin: 0 auto;
-      aspect-ratio: 4/3;
-      background: #020617;
-      border-radius: 0;
-      overflow: hidden;
+      width: min(90vw, 400px);
+      height: min(90vw, 400px);
+      margin-bottom: 24px;
     }
-    @media (min-width: 500px) {
-      .video-wrap { border-radius: 16px; margin-top: 8px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
-    }
-    video, canvas { width: 100%; height: 100%; object-fit: cover; display: block; }
-    canvas { position: absolute; top: 0; left: 0; }
 
-    #loading {
-      position: absolute; inset: 0; background: #020617;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      z-index: 10; font-size: 0.95rem; color: #94a3b8;
-    }
-    .spinner {
-      width: 36px; height: 36px; border: 3px solid #334155;
-      border-top-color: #38bdf8; border-radius: 50%;
-      animation: spin 0.7s linear infinite; margin-bottom: 12px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* Status bar */
-    .status-bar {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      padding: 10px 12px;
-      max-width: 480px;
-      margin: 0 auto;
+    canvas {
       width: 100%;
-    }
-    .stat-card {
-      background: #1e293b;
-      border-radius: 12px;
-      padding: 10px;
-      text-align: center;
-      border: 1px solid #334155;
-    }
-    .stat-card .label { font-size: 0.7rem; color: #64748b; margin-bottom: 2px; }
-    .stat-card .val { font-size: 1.25rem; font-weight: 700; }
-    #earVal { color: #38bdf8; }
-    #statusVal { color: #4ade80; }
-
-    /* Controls */
-    .controls {
-      display: flex;
-      gap: 8px;
-      padding: 8px 12px 4px;
-      max-width: 480px;
-      margin: 0 auto;
-      width: 100%;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-    .btn {
-      border: none;
-      border-radius: 12px;
-      padding: 12px 18px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      color: #fff;
-      transition: transform 0.15s, opacity 0.15s;
-      flex: 1;
-      min-width: 90px;
-      max-width: 140px;
-    }
-    .btn:active { transform: scale(0.96); }
-    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-    .btn-primary { background: #3b82f6; }
-    .btn-danger { background: #ef4444; }
-    .btn-success { background: #22c55e; }
-    .btn-secondary { background: #475569; }
-
-    /* Settings */
-    .settings {
-      margin: 10px 12px 20px;
-      max-width: 480px;
-      width: calc(100% - 24px);
-      margin-left: auto;
-      margin-right: auto;
-      background: #1e293b;
-      border-radius: 14px;
-      border: 1px solid #334155;
-      overflow: hidden;
-    }
-    .settings-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 16px;
-      cursor: pointer;
-      user-select: none;
-    }
-    .settings-header h2 { font-size: 0.95rem; font-weight: 600; }
-    .settings-header .chevron {
-      transition: transform 0.25s;
-      font-size: 0.85rem;
-      color: #64748b;
-    }
-    .settings-header.open .chevron { transform: rotate(180deg); }
-    .settings-body {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.3s ease;
-    }
-    .settings-body.open { max-height: 420px; }
-    .setting-item {
-      padding: 12px 16px;
-      border-top: 1px solid #334155;
-    }
-    .setting-item label {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.85rem;
-      color: #cbd5e1;
-      margin-bottom: 8px;
-    }
-    .setting-item label span.num {
-      background: #0f172a;
-      padding: 2px 8px;
-      border-radius: 6px;
-      color: #38bdf8;
-      font-weight: 600;
-      font-size: 0.9rem;
-    }
-    input[type="range"] {
-      width: 100%;
-      height: 6px;
-      -webkit-appearance: none;
-      background: #334155;
-      border-radius: 3px;
-      outline: none;
-    }
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 22px;
-      height: 22px;
-      background: #3b82f6;
+      height: 100%;
       border-radius: 50%;
-      cursor: pointer;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      box-shadow: 
+        0 0 0 8px #ffd700,
+        0 0 0 12px #1a1a2e,
+        0 0 40px rgba(255, 215, 0, 0.4);
+      background: #1a1a2e;
     }
-    .hint { font-size: 0.72rem; color: #64748b; margin-top: 4px; }
 
-    /* Toggle row */
-    .toggle-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 16px;
-      border-top: 1px solid #334155;
-      font-size: 0.85rem;
-      color: #cbd5e1;
+    .pointer {
+      position: absolute;
+      top: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 18px solid transparent;
+      border-right: 18px solid transparent;
+      border-top: 36px solid #ffd700;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+      z-index: 10;
     }
-    .toggle {
-      width: 48px;
-      height: 28px;
-      background: #334155;
-      border-radius: 14px;
-      position: relative;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .toggle.on { background: #3b82f6; }
-    .toggle::after {
+
+    .pointer::after {
       content: '';
       position: absolute;
-      width: 22px;
-      height: 22px;
-      background: #fff;
+      top: -36px;
+      left: -8px;
+      width: 16px;
+      height: 16px;
+      background: #ffd700;
       border-radius: 50%;
-      top: 3px;
-      left: 3px;
-      transition: transform 0.2s;
+      border: 3px solid #1a1a2e;
     }
-    .toggle.on::after { transform: translateX(20px); }
 
-    /* Log */
-    .log-box {
-      max-height: 100px;
-      overflow-y: auto;
-      padding: 8px 16px 12px;
-      font-size: 0.75rem;
-      color: #94a3b8;
-      border-top: 1px solid #334155;
+    .controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      width: 100%;
+      max-width: 420px;
     }
-    .log-box div { margin-bottom: 3px; }
 
-    /* Alert overlay */
-    .alert-box {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(185, 28, 28, 0.94);
-      z-index: 9999;
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    #spinBtn, #clearHistoryBtn {
+      padding: 14px 28px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    #spinBtn {
+      color: #1a1a2e;
+      background: linear-gradient(180deg, #ffd700 0%, #ffaa00 100%);
+      box-shadow: 0 5px 0 #cc8800, 0 8px 16px rgba(0,0,0,0.3);
+    }
+
+    #spinBtn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 7px 0 #cc8800, 0 12px 20px rgba(0,0,0,0.35);
+    }
+
+    #spinBtn:active:not(:disabled) {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 #cc8800, 0 4px 8px rgba(0,0,0,0.3);
+    }
+
+    #spinBtn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    #clearHistoryBtn {
+      color: #fff;
+      background: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%);
+      box-shadow: 0 5px 0 #922b21, 0 8px 16px rgba(0,0,0,0.3);
+    }
+
+    #clearHistoryBtn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 7px 0 #922b21, 0 12px 20px rgba(0,0,0,0.35);
+    }
+
+    #clearHistoryBtn:active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 #922b21;
+    }
+
+    .result-box {
+      min-height: 70px;
+      display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      animation: pulse 0.65s infinite;
-      padding: 20px;
-      text-align: center;
-    }
-    .alert-box.show { display: flex; }
-    .alert-box h2 { font-size: 2.2rem; margin-bottom: 10px; }
-    .alert-box p { font-size: 1.15rem; opacity: 0.95; }
-    .alert-box .dismiss {
-      margin-top: 24px;
-      background: rgba(255,255,255,0.2);
-      border: 2px solid #fff;
-      color: #fff;
       padding: 12px 28px;
-      border-radius: 12px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
+      background: rgba(255,255,255,0.08);
+      border-radius: 14px;
+      border: 1px solid rgba(255,215,0,0.3);
+      min-width: 200px;
     }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.85} }
 
-    /* Bottom safe area */
-    .safe-bottom { height: env(safe-area-inset-bottom, 12px); }
+    .result-label {
+      font-size: 0.85rem;
+      color: #a0aec0;
+      margin-bottom: 2px;
+    }
+
+    #result {
+      font-size: 2.8rem;
+      font-weight: 800;
+      color: #ffd700;
+      text-shadow: 0 0 18px rgba(255, 215, 0, 0.6);
+      transition: all 0.25s ease;
+    }
+
+    .history {
+      margin-top: 20px;
+      text-align: center;
+      max-width: 420px;
+      width: 100%;
+    }
+
+    .history h3 {
+      font-size: 0.95rem;
+      color: #a0aec0;
+      margin-bottom: 10px;
+    }
+
+    #historyList {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .history-item {
+      background: rgba(255,215,0,0.15);
+      border: 1px solid rgba(255,215,0,0.4);
+      color: #ffd700;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    footer {
+      margin-top: 28px;
+      color: #64748b;
+      font-size: 0.8rem;
+    }
+
+    /* ===== HIỆU ỨNG TUNG HÔ ===== */
+    #celebration {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+
+    #celebration.show {
+      display: flex;
+    }
+
+    .celeb-text {
+      font-size: clamp(2.5rem, 10vw, 4.5rem);
+      font-weight: 900;
+      color: #ffd700;
+      text-shadow: 
+        0 0 20px rgba(255,215,0,0.8),
+        0 0 40px rgba(255,100,0,0.6),
+        0 4px 0 #cc8800;
+      animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    .celeb-sub {
+      margin-top: 12px;
+      font-size: 1.4rem;
+      color: #fff;
+      opacity: 0;
+      animation: fadeUp 0.5s 0.3s forwards;
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.3); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes fadeUp {
+      0% { transform: translateY(20px); opacity: 0; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+
+    .confetti {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      animation: confettiFall linear forwards;
+    }
+
+    @keyframes confettiFall {
+      0% {
+        transform: translateY(-20px) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h1>😴 Phát hiện Buồn ngủ</h1>
-    <p>Tối ưu cho điện thoại</p>
-  </div>
+  <h1>🎡 Vòng Quay May Mắn</h1>
+  <p class="subtitle">Các số từ 1 đến 42 • Quay ngẫu nhiên</p>
 
-  <div class="video-wrap">
-    <div id="loading">
-      <div class="spinner"></div>
-      <div id="loadingText">Đang tải AI...</div>
-    </div>
-    <video id="video" autoplay muted playsinline></video>
-    <canvas id="overlay"></canvas>
-  </div>
-
-  <div class="status-bar">
-    <div class="stat-card">
-      <div class="label">EAR (Mắt)</div>
-      <div class="val" id="earVal">--</div>
-    </div>
-    <div class="stat-card">
-      <div class="label">Trạng thái</div>
-      <div class="val" id="statusVal">Chờ...</div>
-    </div>
+  <div class="wheel-container">
+    <div class="pointer"></div>
+    <canvas id="wheel" width="500" height="500"></canvas>
   </div>
 
   <div class="controls">
-    <button class="btn btn-primary" id="startBtn" disabled>Bắt đầu</button>
-    <button class="btn btn-danger" id="stopBtn" disabled>Dừng</button>
-    <button class="btn btn-success" id="testSoundBtn">Thử loa</button>
-  </div>
-
-  <!-- Settings -->
-  <div class="settings">
-    <div class="settings-header" id="settingsToggle">
-      <h2>⚙️ Cài đặt</h2>
-      <span class="chevron">▼</span>
+    <div class="btn-row">
+      <button id="spinBtn">QUAY NGAY</button>
+      <button id="clearHistoryBtn">XÓA LỊCH SỬ</button>
     </div>
-    <div class="settings-body" id="settingsBody">
-      <div class="setting-item">
-        <label>
-          <span>Độ nhạy mắt (EAR)</span>
-          <span class="num" id="earNum">0.30</span>
-        </label>
-        <input type="range" id="earSlider" min="0.15" max="0.40" step="0.01" value="0.30" />
-        <div class="hint">Cao = nhạy hơn · Thấp = khó báo hơn</div>
-      </div>
-
-      <div class="setting-item">
-        <label>
-          <span>Thời gian xác nhận</span>
-          <span class="num" id="frameNum">8 frame</span>
-        </label>
-        <input type="range" id="frameSlider" min="3" max="25" step="1" value="8" />
-        <div class="hint">Ít frame = báo nhanh hơn</div>
-      </div>
-
-      <div class="setting-item">
-        <label>
-          <span>Âm lượng cảnh báo</span>
-          <span class="num" id="volNum">70%</span>
-        </label>
-        <input type="range" id="volSlider" min="10" max="100" step="5" value="70" />
-      </div>
-
-      <div class="toggle-row">
-        <span>Rung khi cảnh báo (điện thoại)</span>
-        <div class="toggle on" id="vibrateToggle"></div>
-      </div>
-
-      <div class="toggle-row">
-        <span>Giữ màn hình sáng</span>
-        <div class="toggle on" id="wakeToggle"></div>
-      </div>
-
-      <div class="log-box" id="logBox">
-        <div>• Sẵn sàng</div>
-      </div>
+    
+    <div class="result-box">
+      <div class="result-label">Kết quả</div>
+      <div id="result">—</div>
     </div>
   </div>
 
-  <div class="safe-bottom"></div>
+  <div class="history">
+    <h3>Lịch sử quay gần đây</h3>
+    <div id="historyList"></div>
+  </div>
 
-  <!-- Alert -->
-  <div class="alert-box" id="alertBox">
-    <h2>⚠️ CẢNH BÁO!</h2>
-    <p>Bạn đang buồn ngủ!<br>Hãy tỉnh táo lại.</p>
-    <button class="dismiss" id="dismissBtn">Tắt cảnh báo</button>
+  <footer>Nhấn Space để quay nhanh</footer>
+
+  <!-- Lớp hiệu ứng tung hô -->
+  <div id="celebration">
+    <div class="celeb-text" id="celebText">🎉 CHÚC MỪNG!</div>
+    <div class="celeb-sub" id="celebSub">Bạn đã quay được số đặc biệt</div>
   </div>
 
   <script>
-    // ===== DOM =====
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('overlay');
+    const canvas = document.getElementById('wheel');
     const ctx = canvas.getContext('2d');
-    const earVal = document.getElementById('earVal');
-    const statusVal = document.getElementById('statusVal');
-    const startBtn = document.getElementById('startBtn');
-    const stopBtn = document.getElementById('stopBtn');
-    const testSoundBtn = document.getElementById('testSoundBtn');
-    const loading = document.getElementById('loading');
-    const loadingText = document.getElementById('loadingText');
-    const alertBox = document.getElementById('alertBox');
-    const dismissBtn = document.getElementById('dismissBtn');
-    const logBox = document.getElementById('logBox');
+    const spinBtn = document.getElementById('spinBtn');
+    const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+    const resultEl = document.getElementById('result');
+    const historyList = document.getElementById('historyList');
+    const celebration = document.getElementById('celebration');
+    const celebText = document.getElementById('celebText');
+    const celebSub = document.getElementById('celebSub');
 
-    // Settings
-    const earSlider = document.getElementById('earSlider');
-    const frameSlider = document.getElementById('frameSlider');
-    const volSlider = document.getElementById('volSlider');
-    const earNum = document.getElementById('earNum');
-    const frameNum = document.getElementById('frameNum');
-    const volNum = document.getElementById('volNum');
-    const vibrateToggle = document.getElementById('vibrateToggle');
-    const wakeToggle = document.getElementById('wakeToggle');
-    const settingsToggle = document.getElementById('settingsToggle');
-    const settingsBody = document.getElementById('settingsBody');
+    const numbers = Array.from({ length: 42 }, (_, i) => i + 1);
+    const colors = [
+      '#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6',
+      '#1abc9c', '#e67e22', '#34495e', '#e91e63', '#00bcd4',
+      '#8bc34a', '#ff5722', '#673ab7', '#009688', '#ff9800',
+      '#3f51b5', '#cddc39', '#795548', '#607d8b', '#f44336',
+      '#2196f3', '#4caf50', '#ffc107', '#9c27b0', '#00acc1',
+      '#7cb342', '#ff7043', '#5e35b1', '#26a69a', '#ffa726',
+      '#5c6bc0', '#d4e157', '#8d6e63', '#78909c', '#ef5350',
+      '#42a5f5', '#66bb6a', '#ffca28', '#ab47bc', '#26c6da',
+      '#9ccc65', '#ff8a65'
+    ];
 
-    // ===== STATE =====
-    let isRunning = false;
-    let consecutiveClosed = 0;
-    let EAR_THRESHOLD = 0.30;
-    let FRAMES_TO_ALERT = 8;
-    let VOLUME = 0.7;
-    let VIBRATE_ON = true;
-    let WAKE_LOCK = true;
-    let wakeLockObj = null;
-    let audioCtx = null;
-    let isBeeping = false;
-    let beepInterval = null;
+    // ===== SỐ CHỈ ĐỊNH SẴN (chạy ngầm) =====
+    const PRESET = [3, 5, 15, 37];
 
-    // Load saved settings
-    function loadSettings() {
-      try {
-        const s = JSON.parse(localStorage.getItem('drowsySettings') || '{}');
-        if (s.ear) { EAR_THRESHOLD = s.ear; earSlider.value = s.ear; earNum.textContent = s.ear.toFixed(2); }
-        if (s.frames) { FRAMES_TO_ALERT = s.frames; frameSlider.value = s.frames; frameNum.textContent = s.frames + ' frame'; }
-        if (s.vol) { VOLUME = s.vol; volSlider.value = s.vol * 100; volNum.textContent = Math.round(s.vol * 100) + '%'; }
-        if (s.vibrate !== undefined) { VIBRATE_ON = s.vibrate; vibrateToggle.classList.toggle('on', s.vibrate); }
-        if (s.wake !== undefined) { WAKE_LOCK = s.wake; wakeToggle.classList.toggle('on', s.wake); }
-      } catch(e) {}
-    }
-    function saveSettings() {
-      localStorage.setItem('drowsySettings', JSON.stringify({
-        ear: EAR_THRESHOLD, frames: FRAMES_TO_ALERT, vol: VOLUME,
-        vibrate: VIBRATE_ON, wake: WAKE_LOCK
-      }));
-    }
-    loadSettings();
+    // Lấy vị trí đã quay từ localStorage (chung cho tất cả lần mở)
+    let presetIndex = parseInt(localStorage.getItem('wheelPresetIndex')) || 0;
 
-    // ===== LOG =====
-    function log(msg) {
-      const time = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      const div = document.createElement('div');
-      div.textContent = `• ${time} ${msg}`;
-      logBox.prepend(div);
-      if (logBox.children.length > 15) logBox.lastChild.remove();
-    }
+    // ===== SỐ ĐẶC BIỆT SẼ CÓ HIỆU ỨNG TUNG HÔ =====
+    const SPECIAL_NUMBERS = [3, 5, 15, 37, 7, 14, 21, 28, 35, 42];
 
-    // ===== AUDIO =====
-    function initAudio() {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-    }
-    function playBeep() {
-      if (!audioCtx) return;
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.type = 'square';
-      osc.frequency.value = 880;
-      gain.gain.setValueAtTime(VOLUME * 0.4, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.22);
-      osc.start(audioCtx.currentTime);
-      osc.stop(audioCtx.currentTime + 0.22);
-    }
-    function startAlarm() {
-      if (isBeeping) return;
-      isBeeping = true;
-      initAudio();
-      playBeep();
-      beepInterval = setInterval(playBeep, 380);
-      if (VIBRATE_ON && navigator.vibrate) {
-        navigator.vibrate([200, 100, 200, 100, 400]);
-      }
-    }
-    function stopAlarm() {
-      isBeeping = false;
-      if (beepInterval) { clearInterval(beepInterval); beepInterval = null; }
-      if (navigator.vibrate) navigator.vibrate(0);
-    }
+    const size = canvas.width;
+    const center = size / 2;
+    const radius = center - 10;
+    const segmentAngle = (2 * Math.PI) / numbers.length;
 
-    // ===== WAKE LOCK =====
-    async function requestWakeLock() {
-      if (!WAKE_LOCK || !('wakeLock' in navigator)) return;
-      try {
-        wakeLockObj = await navigator.wakeLock.request('screen');
-        log('Giữ màn hình sáng');
-      } catch(e) {}
-    }
-    function releaseWakeLock() {
-      if (wakeLockObj) { wakeLockObj.release(); wakeLockObj = null; }
-    }
+    let currentRotation = 0;
+    let isSpinning = false;
+    let history = [];
 
-    // ===== UI EVENTS =====
-    settingsToggle.addEventListener('click', () => {
-      settingsToggle.classList.toggle('open');
-      settingsBody.classList.toggle('open');
-    });
+    function drawWheel(rotation = 0) {
+      ctx.clearRect(0, 0, size, size);
+      ctx.save();
+      ctx.translate(center, center);
+      ctx.rotate(rotation);
 
-    earSlider.addEventListener('input', () => {
-      EAR_THRESHOLD = parseFloat(earSlider.value);
-      earNum.textContent = EAR_THRESHOLD.toFixed(2);
-      saveSettings();
-    });
-    frameSlider.addEventListener('input', () => {
-      FRAMES_TO_ALERT = parseInt(frameSlider.value);
-      frameNum.textContent = FRAMES_TO_ALERT + ' frame';
-      saveSettings();
-    });
-    volSlider.addEventListener('input', () => {
-      VOLUME = parseInt(volSlider.value) / 100;
-      volNum.textContent = Math.round(VOLUME * 100) + '%';
-      saveSettings();
-    });
-    vibrateToggle.addEventListener('click', () => {
-      VIBRATE_ON = !VIBRATE_ON;
-      vibrateToggle.classList.toggle('on', VIBRATE_ON);
-      saveSettings();
-      if (VIBRATE_ON && navigator.vibrate) navigator.vibrate(50);
-    });
-    wakeToggle.addEventListener('click', () => {
-      WAKE_LOCK = !WAKE_LOCK;
-      wakeToggle.classList.toggle('on', WAKE_LOCK);
-      saveSettings();
-      if (WAKE_LOCK) requestWakeLock(); else releaseWakeLock();
-    });
+      numbers.forEach((num, i) => {
+        const startAngle = i * segmentAngle - Math.PI / 2;
+        const endAngle = startAngle + segmentAngle;
 
-    testSoundBtn.addEventListener('click', () => {
-      initAudio();
-      playBeep();
-      setTimeout(playBeep, 280);
-      setTimeout(playBeep, 560);
-      if (VIBRATE_ON && navigator.vibrate) navigator.vibrate(80);
-    });
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, radius, startAngle, endAngle);
+        ctx.closePath();
+        ctx.fillStyle = colors[i % colors.length];
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
 
-    dismissBtn.addEventListener('click', () => {
-      alertBox.classList.remove('show');
-      stopAlarm();
-      consecutiveClosed = 0;
-    });
-
-    // ===== DETECTION =====
-    function distance(p1, p2) {
-      return Math.hypot(p1.x - p2.x, p1.y - p2.y);
-    }
-    function getEAR(eye) {
-      const A = distance(eye[1], eye[5]);
-      const B = distance(eye[2], eye[4]);
-      const C = distance(eye[0], eye[3]);
-      return (A + B) / (2 * C);
-    }
-
-    async function setupCamera() {
-      // Ưu tiên camera trước trên điện thoại
-      const constraints = {
-        video: {
-          facingMode: 'user',
-          width: { ideal: 640 },
-          height: { ideal: 480 }
-        },
-        audio: false
-      };
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      video.srcObject = stream;
-      return new Promise(r => {
-        video.onloadedmetadata = () => { video.play(); r(); };
+        ctx.save();
+        ctx.rotate(startAngle + segmentAngle / 2);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 15px Segoe UI, system-ui, sans-serif';
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = 3;
+        ctx.fillText(num.toString(), radius * 0.72, 0);
+        ctx.restore();
       });
+
+      ctx.beginPath();
+      ctx.arc(0, 0, 26, 0, 2 * Math.PI);
+      ctx.fillStyle = '#1a1a2e';
+      ctx.fill();
+      ctx.strokeStyle = '#ffd700';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(0, 0, 16, 0, 2 * Math.PI);
+      ctx.fillStyle = '#ffd700';
+      ctx.fill();
+
+      ctx.restore();
     }
 
-    async function loadModels() {
-      loadingText.textContent = 'Đang tải model...';
-      const URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.14/model';
-      await faceapi.nets.tinyFaceDetector.loadFromUri(URL);
-      await faceapi.nets.faceLandmark68Net.loadFromUri(URL);
+    function easeOutCubic(t) {
+      return 1 - Math.pow(1 - t, 3);
     }
 
-    async function detect() {
-      if (!isRunning) return;
-      try {
-        const detections = await faceapi
-          .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.4 }))
-          .withFaceLandmarks();
+    // ===== HIỆU ỨNG TUNG HÔ =====
+    function showCelebration(number) {
+      celebration.querySelectorAll('.confetti').forEach(el => el.remove());
 
-        const size = { width: video.videoWidth, height: video.videoHeight };
-        faceapi.matchDimensions(canvas, size);
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      celebText.textContent = `🎉 ${number} 🎉`;
+      celebSub.textContent = 'Chúc mừng bạn đã quay được số đặc biệt!';
+      celebration.classList.add('show');
 
-        if (detections?.length > 0) {
-          const resized = faceapi.resizeResults(detections, size);
-          const lm = resized[0].landmarks;
-          const avgEAR = (getEAR(lm.getLeftEye()) + getEAR(lm.getRightEye())) / 2;
+      const confettiColors = ['#ffd700', '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dfe6e9', '#fd79a8'];
+      for (let i = 0; i < 80; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.left = Math.random() * 100 + 'vw';
+        confetti.style.backgroundColor = confettiColors[Math.floor(Math.random() * confettiColors.length)];
+        confetti.style.animationDuration = (Math.random() * 2 + 2.5) + 's';
+        confetti.style.animationDelay = (Math.random() * 0.8) + 's';
+        confetti.style.width = (Math.random() * 10 + 6) + 'px';
+        confetti.style.height = (Math.random() * 10 + 6) + 'px';
+        confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+        celebration.appendChild(confetti);
+      }
 
-          faceapi.draw.drawDetections(canvas, resized);
-          faceapi.draw.drawFaceLandmarks(canvas, resized);
+      setTimeout(() => {
+        celebration.classList.remove('show');
+      }, 3500);
+    }
 
-          earVal.textContent = avgEAR.toFixed(3);
+    function spin() {
+      if (isSpinning) return;
+      isSpinning = true;
+      spinBtn.disabled = true;
+      resultEl.textContent = '...';
+      resultEl.style.transform = 'scale(1)';
 
-          if (avgEAR < EAR_THRESHOLD) {
-            consecutiveClosed++;
-            statusVal.textContent = 'Nhắm mắt...';
-            statusVal.style.color = '#fbbf24';
-          } else {
-            consecutiveClosed = 0;
-            statusVal.textContent = 'Tỉnh táo';
-            statusVal.style.color = '#4ade80';
-            if (alertBox.classList.contains('show')) {
-              alertBox.classList.remove('show');
-              stopAlarm();
-            }
-          }
+      // Quyết định số thắng
+      let targetNumber;
+      if (presetIndex < PRESET.length) {
+        targetNumber = PRESET[presetIndex];
+        presetIndex++;
+        // Lưu lại vị trí mới để lần mở sau (hoặc file khác) tiếp tục đúng
+        localStorage.setItem('wheelPresetIndex', presetIndex);
+      } else {
+        targetNumber = numbers[Math.floor(Math.random() * numbers.length)];
+      }
 
-          if (consecutiveClosed >= FRAMES_TO_ALERT) {
-            statusVal.textContent = 'BUỒN NGỦ!';
-            statusVal.style.color = '#f87171';
-            if (!alertBox.classList.contains('show')) {
-              alertBox.classList.add('show');
-              startAlarm();
-              log('⚠️ Cảnh báo buồn ngủ');
-            }
-          }
+      const targetIndex = numbers.indexOf(targetNumber);
+      const targetRotation = -(targetIndex * segmentAngle + segmentAngle / 2);
+      const extraSpins = 5 + Math.floor(Math.random() * 3);
+      const finalRotation = currentRotation + extraSpins * 2 * Math.PI +
+                            (targetRotation - (currentRotation % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+
+      const duration = 4500 + Math.random() * 1000;
+      const startTime = performance.now();
+      const startRotation = currentRotation;
+
+      function animate(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = easeOutCubic(progress);
+
+        currentRotation = startRotation + (finalRotation - startRotation) * eased;
+        drawWheel(currentRotation);
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
         } else {
-          earVal.textContent = '--';
-          statusVal.textContent = 'Không thấy mặt';
-          statusVal.style.color = '#94a3b8';
-          consecutiveClosed = 0;
+          currentRotation = finalRotation;
+          drawWheel(currentRotation);
+
+          resultEl.textContent = targetNumber;
+          resultEl.style.transform = 'scale(1.15)';
+          setTimeout(() => resultEl.style.transform = 'scale(1)', 200);
+
+          history.unshift(targetNumber);
+          if (history.length > 10) history.pop();
+          renderHistory();
+
+          // Kiểm tra số đặc biệt → tung hô
+          if (SPECIAL_NUMBERS.includes(targetNumber)) {
+            setTimeout(() => showCelebration(targetNumber), 300);
+          }
+
+          isSpinning = false;
+          spinBtn.disabled = false;
         }
-      } catch (e) { console.error(e); }
-      requestAnimationFrame(detect);
+      }
+
+      requestAnimationFrame(animate);
     }
 
-    async function start() {
-      try {
-        initAudio();
-        startBtn.disabled = true;
-        statusVal.textContent = 'Mở camera...';
-        await setupCamera();
-        isRunning = true;
-        stopBtn.disabled = false;
-        statusVal.textContent = 'Đang theo dõi';
-        statusVal.style.color = '#4ade80';
-        log('Bắt đầu theo dõi');
-        requestWakeLock();
-        detect();
-      } catch (e) {
-        console.error(e);
-        alert('Không mở được camera.\nHãy cho phép quyền Camera và thử lại.');
-        startBtn.disabled = false;
-        log('Lỗi camera');
-      }
+    function renderHistory() {
+      historyList.innerHTML = history
+        .map(n => `<span class="history-item">${n}</span>`)
+        .join('');
     }
 
-    function stop() {
-      isRunning = false;
-      stopBtn.disabled = true;
-      startBtn.disabled = false;
-      alertBox.classList.remove('show');
-      stopAlarm();
-      releaseWakeLock();
-      if (video.srcObject) {
-        video.srcObject.getTracks().forEach(t => t.stop());
-        video.srcObject = null;
-      }
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      statusVal.textContent = 'Đã dừng';
-      statusVal.style.color = '#94a3b8';
-      earVal.textContent = '--';
-      log('Đã dừng');
-    }
+    // === Sự kiện ===
+    spinBtn.addEventListener('click', spin);
 
-    // Init
-    (async () => {
-      try {
-        await loadModels();
-        loading.style.display = 'none';
-        startBtn.disabled = false;
-        statusVal.textContent = 'Sẵn sàng';
-        log('Model đã tải xong');
-      } catch (e) {
-        console.error(e);
-        loadingText.innerHTML = '<span style="color:#f87171">Lỗi tải model<br>Thử F5 / Chrome</span>';
-        log('Lỗi tải model');
-      }
-    })();
+    clearHistoryBtn.addEventListener('click', () => {
+      history = [];
+      renderHistory();
+    });
 
-    startBtn.addEventListener('click', start);
-    stopBtn.addEventListener('click', stop);
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && !isSpinning) {
+        e.preventDefault();
+        spin();
+      }
+    });
+
+    // Khởi tạo
+    drawWheel();
   </script>
 </body>
 </html>
